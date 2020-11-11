@@ -6,7 +6,10 @@ from scarper import get_sites_entries
 async def index(request):
     keywords = request.rel_url.query.get("keywords", "")
 
-    keywords = keywords.split(";")
-    entries = await get_sites_entries(keywords)
+    if keywords:
+        keywords = keywords.split(";")
+        entries = await get_sites_entries(keywords)
+    else:
+        entries = []
 
     return {"entries": entries}
