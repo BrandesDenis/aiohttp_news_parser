@@ -17,15 +17,11 @@ class Scarper:
 
         self.key_words = [kw.lower().strip() for kw in self.key_words]
 
-    def get_entries(self) -> List[Dict[str, str]]:
-        return asyncio.run(self._get_entries())
-
-    async def _get_entries(self) -> List[Dict[str, str]]:
+    async def get_entries(self) -> List[Dict[str, str]]:
         entries: List[Dict[str, str]] = []
 
         async with aiohttp.ClientSession() as session:
-            futures = [self._get_site_entries(
-                session, site) for site in self.sites]
+            futures = [self._get_site_entries(session, site) for site in self.sites]
 
             for future in asyncio.as_completed(futures):
                 result = await future
@@ -33,9 +29,9 @@ class Scarper:
 
         return entries
 
-    async def _get_site_entries(self,
-                                session: aiohttp.ClientSession,
-                                site: str) -> List[Dict[str, str]]:
+    async def _get_site_entries(
+        self, session: aiohttp.ClientSession, site: str
+    ) -> List[Dict[str, str]]:
 
         entries: List[Dict[str, str]] = []
 
@@ -53,8 +49,8 @@ class Scarper:
         if not finded_kw:
             return entries
 
-        parser = bs4.BeautifulSoup(main_page_text, 'lxml')
-        titles = parser.findAll(text=re.compile('.{10,}'))
+        parser = bs4.BeautifulSoup(main_page_text, "lxml")
+        titles = parser.findAll(text=re.compile(".{10,}"))
         # оптимизировать цикл через регулярку
         for title in titles:
             for kw in finded_kw:
@@ -62,33 +58,38 @@ class Scarper:
                     title_ref_block = title.findParent(href=True)
                     if title_ref_block is None:
                         continue
-                    title_ref = title_ref_block['href']
-                    if 'http' not in title_ref:
+                    title_ref = title_ref_block["href"]
+                    if "http" not in title_ref:
                         title_ref = site + title_ref
 
-                    entries.append(({
-                        'ref': title_ref,
-                        'title': title,
-                        'source': site,
-                    }))
+                    entries.append(
+                        (
+                            {
+                                "ref": title_ref,
+                                "title": title,
+                                "source": site,
+                            }
+                        )
+                    )
 
         return entries
 
 
 def _get_default_sites():
     return [
-        'https://meduza.io/',
-        'https://ria.ru/',
-        'https://lenta.ru/',
-        'https://www.rbc.ru/',
-        'https://www.vesti.ru/',
-        'https://russian.rt.com/',
+        "https://meduza.io/",
+        "https://ria.ru/",
+        "https://lenta.ru/",
+        "https://www.rbc.ru/",
+        "https://www.vesti.ru/",
+        "https://russian.rt.com/",
     ]
 
 
-def get_sites_entries(key_words: List[str],
-                      sites: Optional[List[str]] = None) -> List[Dict[str, str]]:
+async def get_sites_entries(
+    key_words: List[str], sites: Optional[List[str]] = None
+) -> List[Dict[str, str]]:
 
     sc = Scarper(key_words, sites)
 
-    return sc.get_entries()
+    return await sc.get_entries()
