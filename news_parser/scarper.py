@@ -6,6 +6,33 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 
 
+DEFAULT_SITES = [
+    "https://meduza.io/",
+    "https://ria.ru/",
+    "https://lenta.ru/",
+    "https://www.rbc.ru/",
+    "https://www.vesti.ru/",
+    "https://russian.rt.com/",
+]
+
+
+@dataclass
+class KeyWord:
+    title: str
+
+    def __post_init__(self):
+        self.words = []
+
+        for word in self.title.split("&"):
+            self.words.append(word.lower().strip())
+
+    def __str__(self):
+        return self.title
+
+    def entry(self, text: str) -> bool:
+        return all(w in text for w in self.words)
+
+
 @dataclass
 class Scarper:
     key_words: List[str] = field(default_factory=list)
@@ -13,9 +40,9 @@ class Scarper:
 
     def __post_init__(self):
         if not isinstance(self.sites, list) or not len(self.sites):
-            self.sites = _get_default_sites()
+            self.sites = DEFAULT_SITES
 
-        self.key_words = [kw.lower().strip() for kw in self.key_words]
+        self._key_words = [KeyWord(k) for k in self.key_words]
 
     async def get_entries(self) -> List[Dict[str, str]]:
         entries: List[Dict[str, str]] = []
@@ -39,13 +66,13 @@ class Scarper:
             async with session.get(site) as response:
                 response.raise_for_status()
                 main_page_text = await response.text()
-        except (aiohttp.ClientConnectionError, aiohttp.ClientResponseError):
+        except aiohttp.ClientError:
             return entries
 
         main_page_text = main_page_text.lower()
 
         # проверим, есть ли вообще на сайте вхождения
-        finded_kw = [w for w in self.key_words if w in main_page_text]
+        finded_kw = [kw for kw in self._key_words if kw.entry(main_page_text)]
         if not finded_kw:
             return entries
 
@@ -54,7 +81,7 @@ class Scarper:
         # оптимизировать цикл через регулярку
         for title in titles:
             for kw in finded_kw:
-                if kw in title.lower():
+                if kw.entry(title):
                     title_ref_block = title.findParent(href=True)
                     if title_ref_block is None:
                         continue
@@ -73,17 +100,6 @@ class Scarper:
                     )
 
         return entries
-
-
-def _get_default_sites():
-    return [
-        "https://meduza.io/",
-        "https://ria.ru/",
-        "https://lenta.ru/",
-        "https://www.rbc.ru/",
-        "https://www.vesti.ru/",
-        "https://russian.rt.com/",
-    ]
 
 
 async def get_sites_entries(
