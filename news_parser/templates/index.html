@@ -8,10 +8,12 @@
 
     {% if entries %}
         <hr>
-        {% for res in entries %}
-        <p>
-            <a href="{{res.ref}}">{{res.title}}({{res.source}})</a>
-        <p>
+        {% for kw in entries %}
+            {% for entry in kw.entries %}
+            <p>
+                <a href="{{entry.ref}}">{{entry.title}}({{entry.source}})</a>
+            <p>
+            {% endfor %}
         {% endfor %}
     {% endif %}
 {% endblock %}

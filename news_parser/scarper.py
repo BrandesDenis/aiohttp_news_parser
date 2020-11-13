@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 import bs4
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict
+from typing import Any, List, Optional, Dict
 
 
 DEFAULT_SITES = [
@@ -37,6 +37,7 @@ class KeyWord:
 class Scarper:
     key_words: List[str] = field(default_factory=list)
     sites: Optional[List[str]] = field(default_factory=list)
+    entries: Dict[str, List[Dict[str, str]]] = field(default_factory=dict, init=False)
 
     def __post_init__(self):
         if not isinstance(self.sites, list) or not len(self.sites):
@@ -44,37 +45,31 @@ class Scarper:
 
         self._key_words = [KeyWord(k) for k in self.key_words]
 
-    async def get_entries(self) -> List[Dict[str, str]]:
-        entries: List[Dict[str, str]] = []
+    async def get_entries(self) -> List[Dict[str, Any]]:
 
         async with aiohttp.ClientSession() as session:
-            futures = [self._get_site_entries(session, site) for site in self.sites]
+            futures = [self._find_site_entries(session, site) for site in self.sites]
+            await asyncio.wait(futures)
 
-            for future in asyncio.as_completed(futures):
-                result = await future
-                entries += result
+        return [
+            {"keyword": kw, "entries": entries}
+            for kw, entries in self.entries.items()
+        ]
 
-        return entries
-
-    async def _get_site_entries(
-        self, session: aiohttp.ClientSession, site: str
-    ) -> List[Dict[str, str]]:
-
-        entries: List[Dict[str, str]] = []
-
+    async def _find_site_entries(self, session: aiohttp.ClientSession, site: str):
         try:
             async with session.get(site) as response:
                 response.raise_for_status()
                 main_page_text = await response.text()
         except aiohttp.ClientError:
-            return entries
+            return
 
         main_page_text = main_page_text.lower()
 
         # проверим, есть ли вообще на сайте вхождения
         finded_kw = [kw for kw in self._key_words if kw.entry(main_page_text)]
         if not finded_kw:
-            return entries
+            return
 
         parser = bs4.BeautifulSoup(main_page_text, "lxml")
         titles = parser.findAll(text=re.compile(".{10,}"))
@@ -89,7 +84,8 @@ class Scarper:
                     if "http" not in title_ref:
                         title_ref = site + title_ref
 
-                    entries.append(
+                    keyword_entries = self.entries.setdefault(kw.title, [])
+                    keyword_entries.append(
                         (
                             {
                                 "ref": title_ref,
@@ -99,12 +95,10 @@ class Scarper:
                         )
                     )
 
-        return entries
-
 
 async def get_sites_entries(
     key_words: List[str], sites: Optional[List[str]] = None
-) -> List[Dict[str, str]]:
+) -> List[Dict[str, Dict[str, str]]]:
 
     sc = Scarper(key_words, sites)
 
