@@ -52,47 +52,45 @@ class Scarper:
             await asyncio.wait(futures)
 
         return [
-            {"keyword": kw, "entries": entries}
-            for kw, entries in self.entries.items()
+            {"keyword": kw, "entries": entries} for kw, entries in self.entries.items()
         ]
 
     async def _find_site_entries(self, session: aiohttp.ClientSession, site: str):
         try:
             async with session.get(site) as response:
                 response.raise_for_status()
-                main_page_text = await response.text()
+                page_text = await response.text()
         except aiohttp.ClientError:
             return
 
-        main_page_text = main_page_text.lower()
+        page_text = page_text.lower()
 
         # проверим, есть ли вообще на сайте вхождения
-        finded_kw = [kw for kw in self._key_words if kw.entry(main_page_text)]
+        finded_kw = [kw for kw in self._key_words if kw.entry(page_text)]
         if not finded_kw:
             return
 
-        parser = bs4.BeautifulSoup(main_page_text, "lxml")
-        titles = parser.findAll(text=re.compile(".{10,}"))
-        # оптимизировать цикл через регулярку
-        for title in titles:
+        parser = bs4.BeautifulSoup(page_text, "lxml")
+        # Ищем теги длиной от 10 символов, которые содержат искомые слова
+        # и берем из них(или из родителей) ссылку href
+        tags = parser.find_all(text=re.compile(".{10,}"))
+        for tag in tags:
             for kw in finded_kw:
-                if kw.entry(title):
-                    title_ref_block = title.findParent(href=True)
-                    if title_ref_block is None:
+                if kw.entry(tag):
+                    tag_ref = tag.find_parent(href=True)
+                    if tag_ref is None:
                         continue
-                    title_ref = title_ref_block["href"]
-                    if "http" not in title_ref:
-                        title_ref = site + title_ref
+                    ref = tag_ref["href"]
+                    if "http" not in ref:
+                        ref = site + ref
 
                     keyword_entries = self.entries.setdefault(kw.title, [])
                     keyword_entries.append(
-                        (
-                            {
-                                "ref": title_ref,
-                                "title": title,
-                                "source": site,
-                            }
-                        )
+                        {
+                            "ref": ref,
+                            "title": str(tag),
+                            "source": site,
+                        }
                     )
 
 
