@@ -2,8 +2,14 @@ import json
 
 import aiohttp_jinja2
 from aiohttp import web
+from aiohttp_apispec import (
+    docs,
+    request_schema,
+    response_schema,
+)
 
-from scarper import get_sites_entries
+from scarper import get_sites_entries, DEFAULT_SITES
+from schemas import EntriesRequest, EntriesResponse
 
 
 @aiohttp_jinja2.template("index.html")
@@ -19,33 +25,22 @@ async def search_page(request):
     return {"entries": entries}
 
 
+@docs(
+    tags=["Тэг 1"],
+    summary="Получить статьи",
+    description=f"""
+    Метод для получения новостных статей по переданным ключевым словам.
+    Если в метод передается список сайтов, то поиск выполняется по списку,
+    иначе поиск выполняется в сайтах по умолчанию:
+    {','.join(DEFAULT_SITES)}""",
+)
+@request_schema(EntriesRequest)
+@response_schema(EntriesResponse, 200)
 async def api_get_entries(request):
-    """
-    на вход данные вида:
-    {
-        'sites': ['site1', 'site2'],
-        'keywords': ['word1', 'word2']
-    }
-
-    результат:
-    {
-        results:[
-            {
-                'word': ['ref1', 'ref2']
-            }
-        ]
-    }
-
-    мб пидантик или маршмаллоу?
-    валидация
-    автодокументация апи
-    """
-
     try:
         request_data = await request.json()
     except json.JSONDecodeError:
-        return web.Response(status=400, text='Invalid JSON')
-
+        return web.Response(status=400, text="Invalid JSON")
 
     keywords = request_data.get("keywords")
     sites = request_data.get("sites")

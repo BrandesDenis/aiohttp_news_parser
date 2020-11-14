@@ -7,12 +7,12 @@ from typing import Any, List, Optional, Dict
 
 
 DEFAULT_SITES = [
-    "https://meduza.io/",
-    "https://ria.ru/",
-    "https://lenta.ru/",
-    "https://www.rbc.ru/",
-    "https://www.vesti.ru/",
-    "https://russian.rt.com/",
+    "https://meduza.io",
+    "https://ria.ru",
+    "https://lenta.ru",
+    "https://www.rbc.ru",
+    "https://www.vesti.ru",
+    "https://russian.rt.com",
 ]
 
 

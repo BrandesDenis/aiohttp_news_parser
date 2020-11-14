@@ -1,19 +1,22 @@
 {% extends 'base.html' %}
 
 {% block body_block %}
-    <p>
-        Найти новости по ключевым словам
-    </p>
-    {% include 'search_block.html' %}
+    <div class="mx-3">
+        <p>
+            Найти новости по ключевым словам. Для поиска нескольких слов введите их через ";"<br>
+            Если необходимо, чтобы оба слова встретились в статье одновременно введите их через "&".
+        </p>
+        {% include 'search_block.html' %}
 
-    {% if entries %}
-        <hr>
-        {% for kw in entries %}
-            {% for entry in kw.entries %}
-            <p>
-                <a href="{{entry.ref}}">{{entry.title}}({{entry.source}})</a>
-            <p>
+        {% if entries %}
+            <hr>
+            {% for kw in entries %}
+                {% for entry in kw.entries %}
+                <p>
+                    <a href="{{entry.ref}}">{{entry.title}}({{entry.source}})</a>
+                <p>
+                {% endfor %}
             {% endfor %}
-        {% endfor %}
-    {% endif %}
+        {% endif %}
+    </div>
 {% endblock %}
