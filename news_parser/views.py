@@ -8,8 +8,8 @@ from aiohttp_apispec import (
     response_schema,
 )
 
-from scarper import get_sites_entries, DEFAULT_SITES
-from schemas import EntriesRequest, EntriesResponse
+from news_parser.scarper import get_sites_entries, DEFAULT_SITES
+from news_parser.schemas import EntriesRequest, EntriesResponse
 
 
 @aiohttp_jinja2.template("index.html")
@@ -26,7 +26,7 @@ async def search_page(request):
 
 
 @docs(
-    tags=["Тэг 1"],
+    tags=["Методы"],
     summary="Получить статьи",
     description=f"""
     Метод для получения новостных статей по переданным ключевым словам.

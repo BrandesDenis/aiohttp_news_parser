@@ -1,4 +1,4 @@
-import views
+from news_parser import views
 
 
 def setup_routes(app):

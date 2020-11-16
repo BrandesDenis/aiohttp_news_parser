@@ -29,7 +29,7 @@ class KeyWord:
     def __str__(self):
         return self.title
 
-    def entry(self, text: str) -> bool:
+    def check_entry(self, text: str) -> bool:
         return all(w in text for w in self.words)
 
 
@@ -66,17 +66,17 @@ class Scarper:
         page_text = page_text.lower()
 
         # проверим, есть ли вообще на сайте вхождения
-        finded_kw = [kw for kw in self._key_words if kw.entry(page_text)]
+        finded_kw = [kw for kw in self._key_words if kw.check_entry(page_text)]
         if not finded_kw:
             return
 
         parser = bs4.BeautifulSoup(page_text, "lxml")
         # Ищем теги длиной от 10 символов, которые содержат искомые слова
         # и берем из них(или из родителей) ссылку href
-        tags = parser.find_all(text=re.compile(".{10,}"))
+        tags = parser.find_all(text=re.compile(".{5,}"))
         for tag in tags:
             for kw in finded_kw:
-                if kw.entry(tag):
+                if kw.check_entry(tag):
                     tag_ref = tag.find_parent(href=True)
                     if tag_ref is None:
                         continue
