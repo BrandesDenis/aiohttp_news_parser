@@ -8,8 +8,9 @@
             "name": "start aiohhp server",
             "type": "python",
             "request": "launch",
-            "program": "news_parser/main.py",
-            "console": "integratedTerminal"
+            "program": "news_parser",
+            "console": "integratedTerminal",
+            "args": ["-m"]
         }
     ]
 }

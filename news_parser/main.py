@@ -27,5 +27,9 @@ def get_app():
     return app
 
 
-if __name__ == "__main__":
+def main():
     web.run_app(get_app())
+
+
+if __name__ == "__main__":
+    main()

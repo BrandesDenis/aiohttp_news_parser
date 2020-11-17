@@ -5,7 +5,6 @@ from aiohttp import web
 from aiohttp_apispec import (
     docs,
     request_schema,
-    response_schema,
 )
 
 from news_parser.scarper import get_sites_entries, DEFAULT_SITES
@@ -33,9 +32,12 @@ async def search_page(request):
     Если в метод передается список сайтов, то поиск выполняется по списку,
     иначе поиск выполняется в сайтах по умолчанию:
     {','.join(DEFAULT_SITES)}""",
+    responses={
+        200: {"description": "Ok", "schema": EntriesResponse},
+        400: {"description": "Invalid JSON"},
+    },
 )
 @request_schema(EntriesRequest)
-@response_schema(EntriesResponse, 200)
 async def api_get_entries(request):
     try:
         request_data = await request.json()
